@@ -37,11 +37,12 @@
 //     for {
 //       select {
 //       case <-exit:
-//         return
+//         break
 //       default:
 //       }
-//       // processing steps
+//       // processing
 //     }
+//     // cleanup
 //   }
 //
 package cli
@@ -58,7 +59,7 @@ import (
 )
 
 // Cmd is the primary structure for maintaining application state. It
-// should not be referenced directly, instead use NewCmd to return a
+// should not be created directly, instead use NewCmd to return a
 // properly initialized Cmd.
 type Cmd struct {
 	wg          *sync.WaitGroup
@@ -84,7 +85,7 @@ func NewCmd() *Cmd {
 // D returns the debug logger instance created by NewCmd. It is intended
 // to be used directly, as in:
 //
-//   c.D.Print("debug message")
+//   c.D().Print("debug message")
 //
 func (c *Cmd) D() *log.Logger {
 	return c.debug
