@@ -74,8 +74,6 @@ func NewCmd() *Cmd {
 	c.wg = new(sync.WaitGroup)
 	c.debug = log.New(os.Stderr, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
 
-	c.debug.Print("starting application")
-
 	c.exitChan = make(chan bool, 1)
 	c.exitTimeout = 5 * time.Second
 	go c.watchExitSignal()
