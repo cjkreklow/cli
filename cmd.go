@@ -21,39 +21,18 @@
 // SOFTWARE.
 
 // Package cli provides simple framework for command line applications.
-// The primary design is to help manage the graceful shutdown of
+// The primary goal is to help manage the graceful shutdown of
 // long-running processes with multiple goroutines.
-//
-//   func main() {
-//     cmd := NewCmd()
-//     cmd.AddWait()
-//     go process(cmd)
-//     cmd.Wait()
-//   }
-//
-//   func process(cmd *Cmd) {
-//     defer cmd.Done()
-//     exit := cmd.ExitChannel()
-//     for {
-//       select {
-//       case <-exit:
-//         break
-//       default:
-//       }
-//       // processing
-//     }
-//     // cleanup
-//   }
 //
 package cli
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"os/signal"
-	"runtime"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 )
@@ -63,38 +42,103 @@ import (
 // properly initialized Cmd.
 type Cmd struct {
 	wg          *sync.WaitGroup
-	debug       *log.Logger
 	exitChan    chan bool
 	exitOnce    sync.Once
-	exitTimeout time.Duration
+	exitTimeout atomic.Value
+	outWriter   io.Writer
+	outLock     sync.Mutex
+	errWriter   io.Writer
+	errLock     sync.Mutex
 }
 
 // NewCmd returns a new initialized Cmd configured with default settings.
 func NewCmd() *Cmd {
 	c := new(Cmd)
 	c.wg = new(sync.WaitGroup)
-	c.debug = log.New(os.Stderr, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
-
 	c.exitChan = make(chan bool, 1)
-	c.exitTimeout = 5 * time.Second
+
+	c.SetExitTimeout(5 * time.Second)
+	c.SetOutputWriter(os.Stdout)
+	c.SetErrorWriter(os.Stderr)
+
 	go c.watchExitSignal()
 
 	return c
 }
 
-// D returns the debug logger instance created by NewCmd. It is intended
-// to be used directly, as in:
-//
-//   c.D().Print("debug message")
-//
-func (c *Cmd) D() *log.Logger {
-	return c.debug
+// SetOutputWriter sets the destination for calls to Print(), Printf()
+// and Println(). NewCmd() sets the default output writer is os.Stdout.
+func (c *Cmd) SetOutputWriter(w io.Writer) {
+	defer c.outLock.Unlock()
+	c.outLock.Lock()
+	c.outWriter = w
+}
+
+// Print is a wrapper around fmt.Print with the destination set to the
+// io.Writer specified by SetOutputWriter. It is safe for concurrent
+// use.
+func (c *Cmd) Print(v ...interface{}) {
+	defer c.outLock.Unlock()
+	c.outLock.Lock()
+	fmt.Fprint(c.outWriter, v...)
+}
+
+// Printf is a wrapper around fmt.Printf with the destination set to the
+// io.Writer specified by SetOutputWriter. It is safe for concurrent
+// use.
+func (c *Cmd) Printf(f string, v ...interface{}) {
+	defer c.outLock.Unlock()
+	c.outLock.Lock()
+	fmt.Fprintf(c.outWriter, f, v...)
+}
+
+// Println is a wrapper around fmt.Println with the destination set to
+// the io.Writer specified by SetOutputWriter. It is safe for concurrent
+// use.
+func (c *Cmd) Println(v ...interface{}) {
+	defer c.outLock.Unlock()
+	c.outLock.Lock()
+	fmt.Fprintln(c.outWriter, v...)
+}
+
+// SetErrorWriter sets the destination for calls to EPrint(), EPrintf()
+// and EPrintln(). NewCmd() sets the default error writer is os.Stderr.
+func (c *Cmd) SetErrorWriter(w io.Writer) {
+	defer c.errLock.Unlock()
+	c.errLock.Lock()
+	c.errWriter = w
+}
+
+// EPrint is a wrapper around fmt.Print with the destination set to the
+// io.Writer specified by SetErrorWriter. It is safe for concurrent use.
+func (c *Cmd) EPrint(v ...interface{}) {
+	defer c.errLock.Unlock()
+	c.errLock.Lock()
+	fmt.Fprint(c.errWriter, v...)
+}
+
+// EPrintf is a wrapper around fmt.Printf with the destination set to
+// the io.Writer specified by SetErrorWriter. It is safe for concurrent
+// use.
+func (c *Cmd) EPrintf(f string, v ...interface{}) {
+	defer c.errLock.Unlock()
+	c.errLock.Lock()
+	fmt.Fprintf(c.errWriter, f, v...)
+}
+
+// EPrintln is a wrapper around fmt.Println with the destination set to
+// the io.Writer specified by SetErrorWriter. It is safe for concurrent
+// use.
+func (c *Cmd) EPrintln(v ...interface{}) {
+	defer c.errLock.Unlock()
+	c.errLock.Lock()
+	fmt.Fprintln(c.errWriter, v...)
 }
 
 // SetExitTimeout sets the length of time Exit() waits before forcing
 // the application to exit. NewCmd sets a default timeout of 5 seconds.
 func (c *Cmd) SetExitTimeout(t time.Duration) {
-	c.exitTimeout = t
+	c.exitTimeout.Store(t)
 }
 
 // Exit gracefully closes the application by closing the exit channel
@@ -102,17 +146,11 @@ func (c *Cmd) SetExitTimeout(t time.Duration) {
 // successful, the calling application must make use of ExitChannel and
 // AddWait.
 func (c *Cmd) Exit() {
-	_, f, l, ok := runtime.Caller(1)
-	if ok {
-		c.debug.Printf("exit called in %s line %v", f, l)
-	}
 	c.exitOnce.Do(func() {
-		c.debug.Println("exit triggered")
 		close(c.exitChan)
-		c.debug.Println("exit channel closed")
 		go func() {
-			<-time.After(c.exitTimeout)
-			fmt.Println("timeout during exit")
+			<-time.After(c.exitTimeout.Load().(time.Duration))
+			c.EPrintln("exit forced by timeout")
 			os.Exit(1)
 		}()
 	})
@@ -147,29 +185,16 @@ func (c *Cmd) Wait() {
 // watchExitSignal is an internal function to watch for common keyboard
 // interrupt signals and gracefully exit the application.
 func (c *Cmd) watchExitSignal() {
-	var sig os.Signal
-	var ok bool
-
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 
 	select {
-	case sig, ok = <-sigChan:
-		if ok {
-			c.debug.Println("caught signal", sig)
-		} else {
-			c.debug.Println("signal channel closed")
-		}
+	case <-sigChan:
 	case <-c.exitChan:
-		c.debug.Println("exiting signal watcher")
-		ok = true
 	}
 
 	c.Exit()
-
-	if ok {
-		<-sigChan
-		fmt.Println("exit forced")
-		os.Exit(1)
-	}
+	<-sigChan
+	c.EPrintln("exit forced by signal")
+	os.Exit(1)
 }

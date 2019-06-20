@@ -23,30 +23,88 @@
 package cli_test
 
 import (
-	"io/ioutil"
-	"testing"
+	"os"
 	"time"
 
 	"kreklow.us/go/cli"
 )
 
-func TestCmd(t *testing.T) {
+func Example() {
 	cmd := cli.NewCmd()
-	cmd.D().SetOutput(ioutil.Discard)
-	cmd.SetExitTimeout(10 * time.Second)
+
+	msgs := make(chan []byte, 1)
+
 	cmd.AddWait()
-	go testWait(cmd)
-	go testExit(cmd)
+	go func() {
+		defer cmd.Done() // deferring Done() and Exit() helps ensure a clean
+		defer cmd.Exit() // shutdown if the goroutine returns unexpectedly
+	loop:
+		for {
+			select {
+			case <-cmd.ExitChannel():
+				// exit signal, go to cleanup
+				break loop
+			case m := <-msgs:
+				// processing tasks
+				cmd.Printf("%s", m)
+			}
+		}
+		// cleanup tasks
+	}()
+
+	// simulate a message sender
+	go func() {
+		time.Sleep(time.Second)
+		msgs <- []byte("Message")
+		cmd.Exit()
+	}()
+
 	cmd.Wait()
+
+	// Output: Message
 }
 
-func testWait(cmd *cli.Cmd) {
-	defer cmd.Done()
-	exit := cmd.ExitChannel()
-	<-exit
+func ExampleCmd_Print() {
+	cmd := cli.NewCmd()
+	cmd.Print("Hello", 123)
+
+	// Output: Hello123
 }
 
-func testExit(cmd *cli.Cmd) {
-	time.Sleep(time.Second)
-	cmd.Exit()
+func ExampleCmd_Println() {
+	cmd := cli.NewCmd()
+	cmd.Println("Countdown", 3, 2, 1)
+
+	// Output: Countdown 3 2 1
+}
+
+func ExampleCmd_Printf() {
+	cmd := cli.NewCmd()
+	cmd.Printf("%s %d = %x", "Convert", 123, 123)
+
+	// Output: Convert 123 = 7b
+}
+
+func ExampleCmd_EPrint() {
+	cmd := cli.NewCmd()
+	cmd.SetErrorWriter(os.Stdout)
+	cmd.EPrint("Hello", 123)
+
+	// Output: Hello123
+}
+
+func ExampleCmd_EPrintln() {
+	cmd := cli.NewCmd()
+	cmd.SetErrorWriter(os.Stdout)
+	cmd.EPrintln("Countdown", 3, 2, 1)
+
+	// Output: Countdown 3 2 1
+}
+
+func ExampleCmd_EPrintf() {
+	cmd := cli.NewCmd()
+	cmd.SetErrorWriter(os.Stdout)
+	cmd.EPrintf("%s %d = %x", "Convert", 123, 123)
+
+	// Output: Convert 123 = 7b
 }
