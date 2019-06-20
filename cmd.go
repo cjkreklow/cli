@@ -77,28 +77,28 @@ func (c *Cmd) SetOutputWriter(w io.Writer) {
 // Print is a wrapper around fmt.Print with the destination set to the
 // io.Writer specified by SetOutputWriter. It is safe for concurrent
 // use.
-func (c *Cmd) Print(v ...interface{}) {
+func (c *Cmd) Print(v ...interface{}) (int, error) {
 	defer c.outLock.Unlock()
 	c.outLock.Lock()
-	fmt.Fprint(c.outWriter, v...)
+	return fmt.Fprint(c.outWriter, v...)
 }
 
 // Printf is a wrapper around fmt.Printf with the destination set to the
 // io.Writer specified by SetOutputWriter. It is safe for concurrent
 // use.
-func (c *Cmd) Printf(f string, v ...interface{}) {
+func (c *Cmd) Printf(f string, v ...interface{}) (int, error) {
 	defer c.outLock.Unlock()
 	c.outLock.Lock()
-	fmt.Fprintf(c.outWriter, f, v...)
+	return fmt.Fprintf(c.outWriter, f, v...)
 }
 
 // Println is a wrapper around fmt.Println with the destination set to
 // the io.Writer specified by SetOutputWriter. It is safe for concurrent
 // use.
-func (c *Cmd) Println(v ...interface{}) {
+func (c *Cmd) Println(v ...interface{}) (int, error) {
 	defer c.outLock.Unlock()
 	c.outLock.Lock()
-	fmt.Fprintln(c.outWriter, v...)
+	return fmt.Fprintln(c.outWriter, v...)
 }
 
 // SetErrorWriter sets the destination for calls to EPrint(), EPrintf()
@@ -111,28 +111,28 @@ func (c *Cmd) SetErrorWriter(w io.Writer) {
 
 // EPrint is a wrapper around fmt.Print with the destination set to the
 // io.Writer specified by SetErrorWriter. It is safe for concurrent use.
-func (c *Cmd) EPrint(v ...interface{}) {
+func (c *Cmd) EPrint(v ...interface{}) (int, error) {
 	defer c.errLock.Unlock()
 	c.errLock.Lock()
-	fmt.Fprint(c.errWriter, v...)
+	return fmt.Fprint(c.errWriter, v...)
 }
 
 // EPrintf is a wrapper around fmt.Printf with the destination set to
 // the io.Writer specified by SetErrorWriter. It is safe for concurrent
 // use.
-func (c *Cmd) EPrintf(f string, v ...interface{}) {
+func (c *Cmd) EPrintf(f string, v ...interface{}) (int, error) {
 	defer c.errLock.Unlock()
 	c.errLock.Lock()
-	fmt.Fprintf(c.errWriter, f, v...)
+	return fmt.Fprintf(c.errWriter, f, v...)
 }
 
 // EPrintln is a wrapper around fmt.Println with the destination set to
 // the io.Writer specified by SetErrorWriter. It is safe for concurrent
 // use.
-func (c *Cmd) EPrintln(v ...interface{}) {
+func (c *Cmd) EPrintln(v ...interface{}) (int, error) {
 	defer c.errLock.Unlock()
 	c.errLock.Lock()
-	fmt.Fprintln(c.errWriter, v...)
+	return fmt.Fprintln(c.errWriter, v...)
 }
 
 // SetExitTimeout sets the length of time Exit() waits before forcing
