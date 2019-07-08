@@ -20,54 +20,55 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Package cli provides simple framework for command line applications.
-// The primary goal is to help manage the graceful shutdown of
-// long-running processes with multiple goroutines.
-//
-package cli
+package cli_test
 
 import (
-	"flag"
-	"io"
 	"os"
-	"sync"
-	"sync/atomic"
-	"time"
+
+	"kreklow.us/go/cli"
 )
 
-// Cmd is the primary structure for maintaining application state. It
-// should not be created directly, instead use NewCmd to return a
-// properly initialized Cmd.
-type Cmd struct {
-	flagSet     *flag.FlagSet
-	exitWg      *sync.WaitGroup
-	exitChan    chan bool
-	exitOnce    sync.Once
-	exitTimeout atomic.Value
-	outWriter   io.Writer
-	outLock     sync.Mutex
-	errWriter   io.Writer
-	errLock     sync.Mutex
+func ExampleCmd_Print() {
+	cmd := cli.NewCmd()
+	cmd.Print("Hello", 123)
+
+	// Output: Hello123
 }
 
-// NewCmd returns a new initialized Cmd configured with default settings.
-func NewCmd() *Cmd {
-	c := new(Cmd)
-	c.exitWg = new(sync.WaitGroup)
-	c.exitChan = make(chan bool, 1)
+func ExampleCmd_Println() {
+	cmd := cli.NewCmd()
+	cmd.Println("Countdown", 3, 2, 1)
 
-	c.SetExitTimeout(5 * time.Second)
-	c.SetOutputWriter(os.Stdout)
-	c.SetErrorWriter(os.Stderr)
-
-	go c.watchExitSignal()
-
-	c.flagSet = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-
-	return c
+	// Output: Countdown 3 2 1
 }
 
-// Flags returns an embedded FlagSet.
-func (c *Cmd) Flags() *flag.FlagSet {
-	return c.flagSet
+func ExampleCmd_Printf() {
+	cmd := cli.NewCmd()
+	cmd.Printf("%s %d = %x", "Convert", 123, 123)
+
+	// Output: Convert 123 = 7b
+}
+
+func ExampleCmd_EPrint() {
+	cmd := cli.NewCmd()
+	cmd.SetErrorWriter(os.Stdout)
+	cmd.EPrint("Hello", 123)
+
+	// Output: Hello123
+}
+
+func ExampleCmd_EPrintln() {
+	cmd := cli.NewCmd()
+	cmd.SetErrorWriter(os.Stdout)
+	cmd.EPrintln("Countdown", 3, 2, 1)
+
+	// Output: Countdown 3 2 1
+}
+
+func ExampleCmd_EPrintf() {
+	cmd := cli.NewCmd()
+	cmd.SetErrorWriter(os.Stdout)
+	cmd.EPrintf("%s %d = %x", "Convert", 123, 123)
+
+	// Output: Convert 123 = 7b
 }
