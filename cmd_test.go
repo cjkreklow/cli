@@ -23,7 +23,6 @@
 package cli_test
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -67,13 +66,16 @@ func Example() {
 
 func TestFlagSet(t *testing.T) {
 	cmd := cli.NewCmd()
-	str := cmd.Flags().String("host", "localhost", "host name")
-	cmd.Flags().Bool("test.v", false, "verbose output")
-	err := cmd.Flags().Parse(os.Args[1:])
+	host := cmd.Flags().String("host", "localhost", "host name")
+	user := cmd.Flags().String("user", "", "user name")
+	err := cmd.Flags().Parse([]string{"-user", "test"})
 	if err != nil {
 		t.Error("unexpected error: ", err)
 	}
-	if *str != "localhost" {
-		t.Error("expected: localhost  received: ", str)
+	if *host != "localhost" {
+		t.Error("expected: localhost  received: ", host)
+	}
+	if *user != "test" {
+		t.Error("expected: test  received: ", user)
 	}
 }
