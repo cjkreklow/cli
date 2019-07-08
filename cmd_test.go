@@ -68,6 +68,7 @@ func Example() {
 func TestFlagSet(t *testing.T) {
 	cmd := cli.NewCmd()
 	str := cmd.Flags().String("host", "localhost", "host name")
+	cmd.Flags().Bool("test.v", false, "verbose output")
 	err := cmd.Flags().Parse(os.Args[1:])
 	if err != nil {
 		t.Error("unexpected error: ", err)
