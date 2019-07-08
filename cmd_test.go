@@ -23,7 +23,7 @@
 package cli_test
 
 import (
-	"os"
+	"testing"
 	"time"
 
 	"kreklow.us/go/cli"
@@ -64,47 +64,18 @@ func Example() {
 	// Output: Message
 }
 
-func ExampleCmd_Print() {
+func TestFlagSet(t *testing.T) {
 	cmd := cli.NewCmd()
-	cmd.Print("Hello", 123)
-
-	// Output: Hello123
-}
-
-func ExampleCmd_Println() {
-	cmd := cli.NewCmd()
-	cmd.Println("Countdown", 3, 2, 1)
-
-	// Output: Countdown 3 2 1
-}
-
-func ExampleCmd_Printf() {
-	cmd := cli.NewCmd()
-	cmd.Printf("%s %d = %x", "Convert", 123, 123)
-
-	// Output: Convert 123 = 7b
-}
-
-func ExampleCmd_EPrint() {
-	cmd := cli.NewCmd()
-	cmd.SetErrorWriter(os.Stdout)
-	cmd.EPrint("Hello", 123)
-
-	// Output: Hello123
-}
-
-func ExampleCmd_EPrintln() {
-	cmd := cli.NewCmd()
-	cmd.SetErrorWriter(os.Stdout)
-	cmd.EPrintln("Countdown", 3, 2, 1)
-
-	// Output: Countdown 3 2 1
-}
-
-func ExampleCmd_EPrintf() {
-	cmd := cli.NewCmd()
-	cmd.SetErrorWriter(os.Stdout)
-	cmd.EPrintf("%s %d = %x", "Convert", 123, 123)
-
-	// Output: Convert 123 = 7b
+	host := cmd.Flags().String("host", "localhost", "host name")
+	user := cmd.Flags().String("user", "", "user name")
+	err := cmd.Flags().Parse([]string{"-user", "test"})
+	if err != nil {
+		t.Error("unexpected error: ", err)
+	}
+	if *host != "localhost" {
+		t.Error("expected: localhost  received: ", host)
+	}
+	if *user != "test" {
+		t.Error("expected: test  received: ", user)
+	}
 }
