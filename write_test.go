@@ -24,9 +24,40 @@ package cli_test
 
 import (
 	"os"
+	"testing"
+	"time"
 
 	"kreklow.us/go/cli"
 )
+
+func TestLPrintf(t *testing.T) {
+	if !testing.Verbose() {
+		t.Skip("Live output test skipped")
+	}
+
+	cmd := cli.NewCmd()
+
+	timer := time.NewTimer(10 * time.Second)
+	lticker := time.NewTicker(100 * time.Millisecond)
+	l2ticker := time.NewTicker(2 * time.Second)
+	pticker := time.NewTicker(3 * time.Second)
+	eticker := time.NewTicker(5 * time.Second)
+
+	for {
+		select {
+		case t := <-lticker.C:
+			cmd.LPrintf("Live: %s\n", t.Format(time.StampMilli))
+		case t := <-l2ticker.C:
+			cmd.LPrintf("Live1: stuff\nLive2: %s\n", t.Format(time.StampMilli))
+		case t := <-pticker.C:
+			cmd.Printf("Printing at %s\n", t.Format(time.StampMilli))
+		case t := <-eticker.C:
+			cmd.EPrintf("Error on %s\n", t.Format(time.StampMilli))
+		case <-timer.C:
+			return
+		}
+	}
+}
 
 func ExampleCmd_Print() {
 	cmd := cli.NewCmd()

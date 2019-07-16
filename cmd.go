@@ -27,6 +27,7 @@
 package cli
 
 import (
+	"bytes"
 	"flag"
 	"io"
 	"os"
@@ -39,15 +40,19 @@ import (
 // should not be created directly, instead use NewCmd to return a
 // properly initialized Cmd.
 type Cmd struct {
-	flagSet     *flag.FlagSet
-	exitWg      *sync.WaitGroup
-	exitChan    chan bool
-	exitOnce    sync.Once
-	exitTimeout atomic.Value
-	outWriter   io.Writer
-	outLock     sync.Mutex
-	errWriter   io.Writer
-	errLock     sync.Mutex
+	flagSet      *flag.FlagSet
+	exitWg       *sync.WaitGroup
+	exitChan     chan bool
+	exitOnce     sync.Once
+	exitTimeout  atomic.Value
+	errWriter    io.Writer
+	outWriter    io.Writer
+	errLock      sync.Mutex
+	outLock      sync.Mutex
+	errIsTerm    bool
+	outIsTerm    bool
+	outLiveLines int
+	outLiveBuf   bytes.Buffer
 }
 
 // NewCmd returns a new initialized Cmd configured with default settings.
