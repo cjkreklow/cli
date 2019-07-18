@@ -24,38 +24,45 @@ package cli_test
 
 import (
 	"os"
+	"sync"
 	"testing"
-	"time"
 
+	"github.com/Netflix/go-expect"
 	"kreklow.us/go/cli"
 )
 
 func TestLPrintf(t *testing.T) {
-	if !testing.Verbose() {
-		t.Skip("Live output test skipped")
+	cons, err := expect.NewConsole()
+	if err != nil {
+		t.Fatal("unexpected error", err)
 	}
 
-	cmd := cli.NewCmd()
+	var outstr string
 
-	timer := time.NewTimer(10 * time.Second)
-	lticker := time.NewTicker(100 * time.Millisecond)
-	l2ticker := time.NewTicker(2 * time.Second)
-	pticker := time.NewTicker(3 * time.Second)
-	eticker := time.NewTicker(5 * time.Second)
-
-	for {
-		select {
-		case t := <-lticker.C:
-			cmd.LPrintf("Live: %s\n", t.Format(time.StampMilli))
-		case t := <-l2ticker.C:
-			cmd.LPrintf("Live1: stuff\nLive2: %s\n", t.Format(time.StampMilli))
-		case t := <-pticker.C:
-			cmd.Printf("Printing at %s\n", t.Format(time.StampMilli))
-		case t := <-eticker.C:
-			cmd.EPrintf("Error on %s\n", t.Format(time.StampMilli))
-		case <-timer.C:
-			return
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		outstr, err = cons.ExpectString("END")
+		if err != nil {
+			t.Error("unexpected error", err)
 		}
+	}()
+
+	cmd := cli.NewCmd()
+	cmd.SetOutputWriter(cons.Tty())
+
+	cmd.Print("print 1\n")
+	cmd.Printf("print %d\n", 2)
+	cmd.Println("print 3")
+	cmd.LPrintf("print %d\n", 4)
+	cmd.LPrintf("print %d\n", 5)
+
+	cmd.Print("END")
+	wg.Wait()
+
+	if outstr != "print 1\r\nprint 2\r\nprint 3\r\nprint 4\r\n\x1b[1A\x1b[2Kprint 5\r\nEND" {
+		t.Error("unexpected output", outstr)
 	}
 }
 
