@@ -23,6 +23,7 @@
 package cli_test
 
 import (
+	"bytes"
 	"os"
 	"sync"
 	"testing"
@@ -32,6 +33,38 @@ import (
 )
 
 func TestLPrintf(t *testing.T) {
+	t.Run("Buffer", testLPrintfBuffer)
+	t.Run("Console", testLPrintfConsole)
+}
+
+func testLPrintfBuffer(t *testing.T) {
+	outbuf := new(bytes.Buffer)
+	errbuf := new(bytes.Buffer)
+
+	cmd := cli.NewCmd()
+	cmd.SetOutputWriter(outbuf)
+	cmd.SetErrorWriter(errbuf)
+
+	cmd.Print("print 1\n")
+	cmd.EPrintf("print %d\n", 2)
+	cmd.Println("print 3")
+	cmd.LPrintf("print %d\n", 4)
+	cmd.LPrintf("print %d\n", 5)
+	cmd.EPrint("print 6\n")
+	cmd.LPrintf("print %d\n", 7)
+	cmd.Printf("print %d\n", 8)
+	cmd.EPrintln("print 9")
+
+	if outbuf.String() != "print 1\nprint 3\nprint 4\nprint 5\nprint 7\nprint 8\n" {
+		t.Error("unexpected output", outbuf.String())
+	}
+
+	if errbuf.String() != "print 2\nprint 6\nprint 9\n" {
+		t.Error("unexpected output", errbuf.String())
+	}
+}
+
+func testLPrintfConsole(t *testing.T) {
 	cons, err := expect.NewConsole()
 	if err != nil {
 		t.Fatal("unexpected error", err)
@@ -51,17 +84,22 @@ func TestLPrintf(t *testing.T) {
 
 	cmd := cli.NewCmd()
 	cmd.SetOutputWriter(cons.Tty())
+	cmd.SetErrorWriter(cons.Tty())
 
 	cmd.Print("print 1\n")
-	cmd.Printf("print %d\n", 2)
+	cmd.EPrintf("print %d\n", 2)
 	cmd.Println("print 3")
 	cmd.LPrintf("print %d\n", 4)
 	cmd.LPrintf("print %d\n", 5)
+	cmd.EPrint("print 6\n")
+	cmd.LPrintf("print %d\n", 7)
+	cmd.Printf("print %d\n", 8)
+	cmd.EPrintln("print 9")
 
 	cmd.Print("END")
 	wg.Wait()
 
-	if outstr != "print 1\r\nprint 2\r\nprint 3\r\nprint 4\r\n\x1b[1A\x1b[2Kprint 5\r\nEND" {
+	if outstr != "print 1\r\nprint 2\r\nprint 3\r\nprint 4\r\n\x1b[1A\x1b[2Kprint 5\r\nprint 6\r\nprint 7\r\nprint 8\r\nprint 9\r\nEND" {
 		t.Error("unexpected output", outstr)
 	}
 }
