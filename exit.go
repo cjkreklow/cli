@@ -20,10 +20,6 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Package cli provides simple framework for command line applications.
-// The primary goal is to help manage the graceful shutdown of
-// long-running processes with multiple goroutines.
-//
 package cli
 
 import (
