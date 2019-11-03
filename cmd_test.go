@@ -23,6 +23,8 @@
 package cli_test
 
 import (
+	"errors"
+	"os"
 	"testing"
 	"time"
 
@@ -36,8 +38,8 @@ func Example() {
 
 	cmd.AddWait()
 	go func() {
-		defer cmd.Done() // deferring Done() and Exit() helps ensure a clean
-		defer cmd.Exit() // shutdown if the goroutine returns unexpectedly
+		defer cmd.Done()                                  // deferring Done() and Exit() helps ensure a clean
+		defer cmd.Exit(errors.New("unexpected shutdown")) // shutdown if the goroutine returns unexpectedly
 	loop:
 		for {
 			select {
@@ -56,10 +58,14 @@ func Example() {
 	go func() {
 		time.Sleep(time.Second)
 		msgs <- []byte("Message")
-		cmd.Exit()
+		cmd.Exit(nil)
 	}()
 
-	cmd.Wait()
+	err := cmd.Wait()
+	if err != nil {
+		cmd.EPrintln(err)
+		os.Exit(1)
+	}
 
 	// Output: Message
 }

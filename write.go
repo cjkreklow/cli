@@ -155,7 +155,10 @@ func (c *Cmd) EPrintln(v ...interface{}) (int, error) {
 
 func (c *Cmd) clearLiveLines() {
 	for l := 0; l < c.outLiveLines; l++ {
-		c.outWriter.Write(clearcmd)
+		_, err := c.outWriter.Write(clearcmd)
+		if err != nil {
+			panic(err)
+		}
 	}
 	c.outLiveLines = 0
 }

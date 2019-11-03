@@ -49,6 +49,7 @@ type Cmd struct {
 	outIsTerm    bool
 	outLiveLines int
 	outLiveBuf   bytes.Buffer
+	err          error
 }
 
 // NewCmd returns a new initialized Cmd configured with default settings.
