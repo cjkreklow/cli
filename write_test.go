@@ -25,6 +25,7 @@ package cli_test
 import (
 	"bytes"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 
@@ -102,6 +103,28 @@ func testLPrintfConsole(t *testing.T) {
 	if outstr != "print 1\r\nprint 2\r\nprint 3\r\nprint 4\r\n\x1b[1A\x1b[2Kprint 5\r\nprint 6\r\nprint 7\r\nprint 8\r\nprint 9\r\nEND" {
 		t.Error("unexpected output", outstr)
 	}
+
+	_, err = cmd.LPrintf("TEST\nTEST\n")
+	if err != nil {
+		t.Error("unexpected error", err)
+	}
+
+	err = cons.Tty().Close()
+	if err != nil {
+		t.Error("unexpected error", err)
+	}
+
+	defer func() {
+		p := recover()
+		err, ok := p.(error)
+		if !ok ||
+			!strings.HasPrefix(err.Error(), "write") ||
+			!strings.HasSuffix(err.Error(), "file already closed") {
+			t.Error("unexpected panic:", p)
+		}
+	}()
+	_, err = cmd.LPrintf("TEST\n")
+	t.Error("expected panic, got", err)
 }
 
 func ExampleCmd_Print() {
