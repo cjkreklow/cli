@@ -27,8 +27,10 @@ import (
 	"flag"
 	"io"
 	"os"
+	"os/signal"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 )
 
@@ -62,7 +64,9 @@ func NewCmd() *Cmd {
 	c.SetOutputWriter(os.Stdout)
 	c.SetErrorWriter(os.Stderr)
 
-	go c.watchExitSignal()
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+	go c.watchExitSignal(sigChan)
 
 	c.flagSet = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 

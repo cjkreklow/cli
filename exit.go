@@ -24,8 +24,6 @@ package cli
 
 import (
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
@@ -82,10 +80,7 @@ func (c *Cmd) Wait() error {
 
 // watchExitSignal is an internal function to watch for common keyboard
 // interrupt signals and gracefully exit the application.
-func (c *Cmd) watchExitSignal() {
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
-
+func (c *Cmd) watchExitSignal(sigChan <-chan os.Signal) {
 	select {
 	case <-sigChan:
 	case <-c.exitChan:
