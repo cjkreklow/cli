@@ -28,7 +28,7 @@ import (
 	"io"
 	"os"
 
-	"golang.org/x/sys/unix"
+	"github.com/mattn/go-isatty"
 )
 
 // newlines is the array of characters the live functions count to
@@ -47,8 +47,7 @@ func (c *Cmd) SetOutputWriter(w io.Writer) {
 	c.outWriter = w
 	c.outIsTerm = false
 	if f, ok := w.(*os.File); ok {
-		_, err := unix.IoctlGetTermios(int(f.Fd()), unix.TCGETS)
-		c.outIsTerm = err == nil
+		c.outIsTerm = isatty.IsTerminal(f.Fd())
 	}
 }
 
@@ -115,8 +114,7 @@ func (c *Cmd) SetErrorWriter(w io.Writer) {
 	c.errWriter = w
 	c.errIsTerm = false
 	if f, ok := w.(*os.File); ok {
-		_, err := unix.IoctlGetTermios(int(f.Fd()), unix.TCGETS)
-		c.errIsTerm = err == nil
+		c.errIsTerm = isatty.IsTerminal(f.Fd())
 	}
 }
 
@@ -157,7 +155,10 @@ func (c *Cmd) EPrintln(v ...interface{}) (int, error) {
 
 func (c *Cmd) clearLiveLines() {
 	for l := 0; l < c.outLiveLines; l++ {
-		c.outWriter.Write(clearcmd)
+		_, err := c.outWriter.Write(clearcmd)
+		if err != nil {
+			panic(err)
+		}
 	}
 	c.outLiveLines = 0
 }

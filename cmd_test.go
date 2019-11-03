@@ -23,6 +23,10 @@
 package cli_test
 
 import (
+	"errors"
+	"os"
+	"os/signal"
+	"syscall"
 	"testing"
 	"time"
 
@@ -36,8 +40,8 @@ func Example() {
 
 	cmd.AddWait()
 	go func() {
-		defer cmd.Done() // deferring Done() and Exit() helps ensure a clean
-		defer cmd.Exit() // shutdown if the goroutine returns unexpectedly
+		defer cmd.Done()                                  // deferring Done() and Exit() helps ensure a clean
+		defer cmd.Exit(errors.New("unexpected shutdown")) // shutdown if the goroutine returns unexpectedly
 	loop:
 		for {
 			select {
@@ -56,10 +60,14 @@ func Example() {
 	go func() {
 		time.Sleep(time.Second)
 		msgs <- []byte("Message")
-		cmd.Exit()
+		cmd.Exit(nil)
 	}()
 
-	cmd.Wait()
+	err := cmd.Wait()
+	if err != nil {
+		cmd.EPrintln(err)
+		os.Exit(1)
+	}
 
 	// Output: Message
 }
@@ -78,4 +86,40 @@ func TestFlagSet(t *testing.T) {
 	if *user != "test" {
 		t.Error("expected: test  received: ", user)
 	}
+}
+
+func TestSignalExit(t *testing.T) {
+	t.Run("SIGHUP", testExitSIGHUP)
+	t.Run("SIGINT", testExitSIGINT)
+	t.Run("SIGTERM", testExitSIGTERM)
+}
+
+func testExitSIGHUP(t *testing.T) {
+	testExitSig(t, syscall.SIGHUP)
+}
+
+func testExitSIGINT(t *testing.T) {
+	testExitSig(t, syscall.SIGINT)
+}
+
+func testExitSIGTERM(t *testing.T) {
+	testExitSig(t, syscall.SIGTERM)
+}
+
+func testExitSig(t *testing.T, sig syscall.Signal) {
+	cmd := cli.NewCmd()
+	cmd.AddWait()
+	go func() {
+		<-cmd.ExitChannel()
+		cmd.Done()
+	}()
+	err := syscall.Kill(syscall.Getpid(), sig)
+	if err != nil {
+		t.Error("unexpected error:", err)
+	}
+	err = cmd.Wait()
+	if err != nil {
+		t.Error("unexpected error:", err)
+	}
+	signal.Reset()
 }

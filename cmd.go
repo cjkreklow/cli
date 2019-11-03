@@ -27,8 +27,10 @@ import (
 	"flag"
 	"io"
 	"os"
+	"os/signal"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 )
 
@@ -49,6 +51,7 @@ type Cmd struct {
 	outIsTerm    bool
 	outLiveLines int
 	outLiveBuf   bytes.Buffer
+	err          error
 }
 
 // NewCmd returns a new initialized Cmd configured with default settings.
@@ -61,7 +64,9 @@ func NewCmd() *Cmd {
 	c.SetOutputWriter(os.Stdout)
 	c.SetErrorWriter(os.Stderr)
 
-	go c.watchExitSignal()
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+	go c.watchExitSignal(sigChan)
 
 	c.flagSet = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 

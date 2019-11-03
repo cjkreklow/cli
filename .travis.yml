@@ -1,32 +1,43 @@
+version: "~> 1.0"
+
 language: go
+
+os:
+  - linux
+arch:
+  - amd64
+  - arm64
+go:
+  - 1.13.x
+  - 1.12.x
+  - 1.11.x
+  - master
 
 env:
   global:
     - GO111MODULE=on
 
-os:
-  - linux
-dist:
-  - xenial
-go:
-  - 1.11.x
-  - 1.12.x
-  - 1.13.x
+dist: bionic
 go_import_path: kreklow.us/go/cli
-script:
-  - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
+script: go test -v ./...
 
 jobs:
+  allow_failures:
+    - go: master
+    - arch: arm64
+  fast_finish: true
   include:
-    - stage: refresh
+    - name: "Race detector / Codecov"
+      stage: validate
+      script: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+      after_success: bash <(curl -s https://codecov.io/bash)
+    - name: "Refresh GoDoc and Go Report Card"
+      stage: refresh
       if: |
         branch = master AND \
         type = push
-      language: minimal
+      language: shell
       install: skip
       script:
         - curl -d "repo=kreklow.us/go/cli" https://goreportcard.com/checks
         - curl -d "path=kreklow.us/go/cli" https://godoc.org/-/refresh
-      after_success: skip
