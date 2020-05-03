@@ -8,6 +8,7 @@ arch:
   - amd64
   - arm64
 go:
+  - 1.14.x
   - 1.13.x
   - 1.12.x
   - 1.11.x
@@ -34,8 +35,7 @@ jobs:
     - name: "Refresh GoDoc and Go Report Card"
       stage: refresh
       if: |
-        branch = master AND \
-        type = push
+        branch = master AND type = push
       language: shell
       install: skip
       script:
