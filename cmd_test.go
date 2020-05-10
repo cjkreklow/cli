@@ -65,7 +65,7 @@ func Example() {
 
 	err := cmd.Wait()
 	if err != nil {
-		cmd.EPrintln(err)
+		cmd.Eprintln(err)
 		os.Exit(1)
 	}
 
