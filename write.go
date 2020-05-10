@@ -31,14 +31,6 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
-// newlines is the array of characters the live functions count to
-// determine how many lines to clear
-var newlines = []byte{'\n'}
-
-// clearcmd is the escape sequence for clearing the previously written
-// lines from the terminal
-var clearcmd = []byte("\x1b[1A\x1b[2K")
-
 // SetOutputWriter sets the destination for calls to Print(), Printf()
 // and Println(). NewCmd() sets the default output writer is os.Stdout.
 func (c *Cmd) SetOutputWriter(w io.Writer) {
@@ -80,7 +72,7 @@ func (c *Cmd) Printf(f string, v ...interface{}) (int, error) {
 // previously output line(s) will be cleared before the new line(s) are
 // written. It is safe for concurrent use, although concurrent updates
 // will overwrite each other.
-func (c *Cmd) LPrintf(f string, v ...interface{}) (int, error) {
+func (c *Cmd) Lprintf(f string, v ...interface{}) (int, error) {
 	c.outLock.Lock()
 	defer c.outLock.Unlock()
 	if !c.outIsTerm {
@@ -90,7 +82,7 @@ func (c *Cmd) LPrintf(f string, v ...interface{}) (int, error) {
 	c.outLiveBuf.Reset()
 	fmt.Fprintf(&c.outLiveBuf, f, v...)
 	b := c.outLiveBuf.Bytes()
-	c.outLiveLines = bytes.Count(b, newlines)
+	c.outLiveLines = bytes.Count(b, []byte{'\n'})
 	return c.outWriter.Write(b)
 }
 
@@ -120,7 +112,7 @@ func (c *Cmd) SetErrorWriter(w io.Writer) {
 
 // EPrint is a wrapper around fmt.Print with the destination set to the
 // io.Writer specified by SetErrorWriter. It is safe for concurrent use.
-func (c *Cmd) EPrint(v ...interface{}) (int, error) {
+func (c *Cmd) Eprint(v ...interface{}) (int, error) {
 	c.errLock.Lock()
 	defer c.errLock.Unlock()
 	if c.errIsTerm {
@@ -132,7 +124,7 @@ func (c *Cmd) EPrint(v ...interface{}) (int, error) {
 // EPrintf is a wrapper around fmt.Printf with the destination set to
 // the io.Writer specified by SetErrorWriter. It is safe for concurrent
 // use.
-func (c *Cmd) EPrintf(f string, v ...interface{}) (int, error) {
+func (c *Cmd) Eprintf(f string, v ...interface{}) (int, error) {
 	c.errLock.Lock()
 	defer c.errLock.Unlock()
 	if c.errIsTerm {
@@ -144,7 +136,7 @@ func (c *Cmd) EPrintf(f string, v ...interface{}) (int, error) {
 // EPrintln is a wrapper around fmt.Println with the destination set to
 // the io.Writer specified by SetErrorWriter. It is safe for concurrent
 // use.
-func (c *Cmd) EPrintln(v ...interface{}) (int, error) {
+func (c *Cmd) Eprintln(v ...interface{}) (int, error) {
 	c.errLock.Lock()
 	defer c.errLock.Unlock()
 	if c.errIsTerm {
@@ -155,7 +147,7 @@ func (c *Cmd) EPrintln(v ...interface{}) (int, error) {
 
 func (c *Cmd) clearLiveLines() {
 	for l := 0; l < c.outLiveLines; l++ {
-		_, err := c.outWriter.Write(clearcmd)
+		_, err := c.outWriter.Write([]byte("\x1b[1A\x1b[2K"))
 		if err != nil {
 			panic(err)
 		}

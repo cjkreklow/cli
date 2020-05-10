@@ -44,7 +44,7 @@ func (c *Cmd) Exit(err error) {
 		close(c.exitChan)
 		go func() {
 			<-time.After(c.exitTimeout.Load().(time.Duration))
-			c.EPrintln("exit forced by timeout")
+			c.Eprintln("exit forced by timeout")
 			os.Exit(1)
 		}()
 	})
@@ -88,6 +88,6 @@ func (c *Cmd) watchExitSignal(sigChan <-chan os.Signal) {
 
 	c.Exit(nil)
 	<-sigChan
-	c.EPrintln("exit forced by signal")
+	c.Eprintln("exit forced by signal")
 	os.Exit(1)
 }

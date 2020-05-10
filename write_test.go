@@ -33,12 +33,12 @@ import (
 	"kreklow.us/go/cli"
 )
 
-func TestLPrintf(t *testing.T) {
-	t.Run("Buffer", testLPrintfBuffer)
-	t.Run("Console", testLPrintfConsole)
+func TestLprintf(t *testing.T) {
+	t.Run("Buffer", testLprintfBuffer)
+	t.Run("Console", testLprintfConsole)
 }
 
-func testLPrintfBuffer(t *testing.T) {
+func testLprintfBuffer(t *testing.T) {
 	outbuf := new(bytes.Buffer)
 	errbuf := new(bytes.Buffer)
 
@@ -47,14 +47,14 @@ func testLPrintfBuffer(t *testing.T) {
 	cmd.SetErrorWriter(errbuf)
 
 	cmd.Print("print 1\n")
-	cmd.EPrintf("print %d\n", 2)
+	cmd.Eprintf("print %d\n", 2)
 	cmd.Println("print 3")
-	cmd.LPrintf("print %d\n", 4)
-	cmd.LPrintf("print %d\n", 5)
-	cmd.EPrint("print 6\n")
-	cmd.LPrintf("print %d\n", 7)
+	cmd.Lprintf("print %d\n", 4)
+	cmd.Lprintf("print %d\n", 5)
+	cmd.Eprint("print 6\n")
+	cmd.Lprintf("print %d\n", 7)
 	cmd.Printf("print %d\n", 8)
-	cmd.EPrintln("print 9")
+	cmd.Eprintln("print 9")
 
 	if outbuf.String() != "print 1\nprint 3\nprint 4\nprint 5\nprint 7\nprint 8\n" {
 		t.Error("unexpected output", outbuf.String())
@@ -65,7 +65,7 @@ func testLPrintfBuffer(t *testing.T) {
 	}
 }
 
-func testLPrintfConsole(t *testing.T) {
+func testLprintfConsole(t *testing.T) {
 	cons, err := expect.NewConsole()
 	if err != nil {
 		t.Fatal("unexpected error", err)
@@ -88,14 +88,14 @@ func testLPrintfConsole(t *testing.T) {
 	cmd.SetErrorWriter(cons.Tty())
 
 	cmd.Print("print 1\n")
-	cmd.EPrintf("print %d\n", 2)
+	cmd.Eprintf("print %d\n", 2)
 	cmd.Println("print 3")
-	cmd.LPrintf("print %d\n", 4)
-	cmd.LPrintf("print %d\n", 5)
-	cmd.EPrint("print 6\n")
-	cmd.LPrintf("print %d\n", 7)
+	cmd.Lprintf("print %d\n", 4)
+	cmd.Lprintf("print %d\n", 5)
+	cmd.Eprint("print 6\n")
+	cmd.Lprintf("print %d\n", 7)
 	cmd.Printf("print %d\n", 8)
-	cmd.EPrintln("print 9")
+	cmd.Eprintln("print 9")
 
 	cmd.Print("END")
 	wg.Wait()
@@ -104,7 +104,7 @@ func testLPrintfConsole(t *testing.T) {
 		t.Error("unexpected output", outstr)
 	}
 
-	_, err = cmd.LPrintf("TEST\nTEST\n")
+	_, err = cmd.Lprintf("TEST\nTEST\n")
 	if err != nil {
 		t.Error("unexpected error", err)
 	}
@@ -123,7 +123,7 @@ func testLPrintfConsole(t *testing.T) {
 			t.Error("unexpected panic:", p)
 		}
 	}()
-	_, err = cmd.LPrintf("TEST\n")
+	_, err = cmd.Lprintf("TEST\n")
 	t.Error("expected panic, got", err)
 }
 
@@ -148,26 +148,26 @@ func ExampleCmd_Printf() {
 	// Output: Convert 123 = 7b
 }
 
-func ExampleCmd_EPrint() {
+func ExampleCmd_Eprint() {
 	cmd := cli.NewCmd()
 	cmd.SetErrorWriter(os.Stdout)
-	cmd.EPrint("Hello", 123)
+	cmd.Eprint("Hello", 123)
 
 	// Output: Hello123
 }
 
-func ExampleCmd_EPrintln() {
+func ExampleCmd_Eprintln() {
 	cmd := cli.NewCmd()
 	cmd.SetErrorWriter(os.Stdout)
-	cmd.EPrintln("Countdown", 3, 2, 1)
+	cmd.Eprintln("Countdown", 3, 2, 1)
 
 	// Output: Countdown 3 2 1
 }
 
-func ExampleCmd_EPrintf() {
+func ExampleCmd_Eprintf() {
 	cmd := cli.NewCmd()
 	cmd.SetErrorWriter(os.Stdout)
-	cmd.EPrintf("%s %d = %x", "Convert", 123, 123)
+	cmd.Eprintf("%s %d = %x", "Convert", 123, 123)
 
 	// Output: Convert 123 = 7b
 }
