@@ -65,6 +65,19 @@ func testLprintfBuffer(t *testing.T) {
 	}
 }
 
+func writeLprintf(cmd *cli.Cmd) {
+	cmd.Print("print 1\n")
+	cmd.Eprintf("print %d\n", 2)
+	cmd.Println("print 3")
+	cmd.Lprintf("print %d\n", 4)
+	cmd.Lprintf("print %d\n", 5)
+	cmd.Eprint("print 6\n")
+	cmd.Lprintf("print %d\n", 7)
+	cmd.Printf("print %d\n", 8)
+	cmd.Eprintln("print 9")
+	cmd.Print("END")
+}
+
 func testLprintfConsole(t *testing.T) {
 	cons, err := expect.NewConsole()
 	if err != nil {
@@ -75,8 +88,10 @@ func testLprintfConsole(t *testing.T) {
 
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
+
 		outstr, err = cons.ExpectString("END")
 		if err != nil {
 			t.Error("unexpected error", err)
@@ -87,17 +102,8 @@ func testLprintfConsole(t *testing.T) {
 	cmd.SetOutputWriter(cons.Tty())
 	cmd.SetErrorWriter(cons.Tty())
 
-	cmd.Print("print 1\n")
-	cmd.Eprintf("print %d\n", 2)
-	cmd.Println("print 3")
-	cmd.Lprintf("print %d\n", 4)
-	cmd.Lprintf("print %d\n", 5)
-	cmd.Eprint("print 6\n")
-	cmd.Lprintf("print %d\n", 7)
-	cmd.Printf("print %d\n", 8)
-	cmd.Eprintln("print 9")
+	writeLprintf(cmd)
 
-	cmd.Print("END")
 	wg.Wait()
 
 	if outstr != "print 1\r\nprint 2\r\nprint 3\r\nprint 4\r\n\x1b[1A\x1b[2Kprint 5\r\nprint 6\r\nprint 7\r\nprint 8\r\nprint 9\r\nEND" {
@@ -116,6 +122,7 @@ func testLprintfConsole(t *testing.T) {
 
 	defer func() {
 		p := recover()
+
 		err, ok := p.(error)
 		if !ok ||
 			!strings.HasPrefix(err.Error(), "write") ||
@@ -123,6 +130,7 @@ func testLprintfConsole(t *testing.T) {
 			t.Error("unexpected panic:", p)
 		}
 	}()
+
 	_, err = cmd.Lprintf("TEST\n")
 	t.Error("expected panic, got", err)
 }

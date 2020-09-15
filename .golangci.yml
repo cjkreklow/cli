@@ -1,0 +1,59 @@
+linters:
+  disable-all: true
+  enable:
+    - asciicheck
+    - bodyclose
+    - deadcode
+    - dogsled
+    - dupl
+    - errcheck
+    - funlen
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+    - goerr113
+    - gofmt
+    - golint
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - interfacer
+    - maligned
+    - misspell
+    - nakedret
+    - nestif
+    - nlreturn
+    - nolintlint
+    - prealloc
+    - rowserrcheck
+    - scopelint
+    - staticcheck
+    - structcheck
+    - testpackage
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - whitespace
+    - wsl
+
+issues:
+  include:
+    - EXC0002
+
+linters-settings:
+  maligned:
+    suggest-new: true
+  nolintlint:
+    allow-unused: false
+    allow-leading-space: false
+    require-explanation: true
+    require-specific: true

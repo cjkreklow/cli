@@ -33,15 +33,20 @@ import (
 	"kreklow.us/go/cli"
 )
 
+//nolint:goerr113
 func Example() {
 	cmd := cli.NewCmd()
-
 	msgs := make(chan []byte, 1)
 
 	cmd.AddWait()
+
+	// message receiver
 	go func() {
-		defer cmd.Done()                                  // deferring Done() and Exit() helps ensure a clean
-		defer cmd.Exit(errors.New("unexpected shutdown")) // shutdown if the goroutine returns unexpectedly
+		err := errors.New("unexpected shutdown")
+
+		defer cmd.Done()    // deferring Done() and Exit() helps ensure a clean
+		defer cmd.Exit(err) // shutdown if the goroutine returns unexpectedly
+
 	loop:
 		for {
 			select {
@@ -50,16 +55,20 @@ func Example() {
 				break loop
 			case m := <-msgs:
 				// processing tasks
-				cmd.Printf("%s", m)
+				cmd.Printf("%s\n", m)
 			}
 		}
+
 		// cleanup tasks
+		cmd.Println("Cleaned up")
 	}()
 
-	// simulate a message sender
+	// message sender
 	go func() {
 		time.Sleep(time.Second)
+
 		msgs <- []byte("Message")
+
 		cmd.Exit(nil)
 	}()
 
@@ -69,20 +78,25 @@ func Example() {
 		os.Exit(1)
 	}
 
-	// Output: Message
+	// Output:
+	// Message
+	// Cleaned up
 }
 
 func TestFlagSet(t *testing.T) {
 	cmd := cli.NewCmd()
 	host := cmd.Flags().String("host", "localhost", "host name")
 	user := cmd.Flags().String("user", "", "user name")
+
 	err := cmd.Flags().Parse([]string{"-user", "test"})
 	if err != nil {
 		t.Error("unexpected error: ", err)
 	}
+
 	if *host != "localhost" {
 		t.Error("expected: localhost  received: ", host)
 	}
+
 	if *user != "test" {
 		t.Error("expected: test  received: ", user)
 	}
@@ -108,18 +122,23 @@ func testExitSIGTERM(t *testing.T) {
 
 func testExitSig(t *testing.T, sig syscall.Signal) {
 	cmd := cli.NewCmd()
+
 	cmd.AddWait()
+
 	go func() {
 		<-cmd.ExitChannel()
 		cmd.Done()
 	}()
+
 	err := syscall.Kill(syscall.Getpid(), sig)
 	if err != nil {
 		t.Error("unexpected error:", err)
 	}
+
 	err = cmd.Wait()
 	if err != nil {
 		t.Error("unexpected error:", err)
 	}
+
 	signal.Reset()
 }

@@ -39,18 +39,18 @@ import (
 // properly initialized Cmd.
 type Cmd struct {
 	flagSet      *flag.FlagSet
+	outWriter    io.Writer
+	outLock      sync.Mutex
+	errWriter    io.Writer
+	errLock      sync.Mutex
+	outLiveBuf   bytes.Buffer
+	outLiveLines int
+	exitTimeout  atomic.Value
 	exitWg       *sync.WaitGroup
 	exitChan     chan bool
 	exitOnce     sync.Once
-	exitTimeout  atomic.Value
-	errWriter    io.Writer
-	outWriter    io.Writer
-	errLock      sync.Mutex
-	outLock      sync.Mutex
 	errIsTerm    bool
 	outIsTerm    bool
-	outLiveLines int
-	outLiveBuf   bytes.Buffer
 	err          error
 }
 
@@ -66,6 +66,7 @@ func NewCmd() *Cmd {
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+
 	go c.watchExitSignal(sigChan)
 
 	c.flagSet = flag.NewFlagSet(os.Args[0], flag.ExitOnError)

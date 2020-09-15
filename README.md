@@ -1,5 +1,5 @@
 # Overview
-[![GoDoc](https://godoc.org/kreklow.us/go/cli?status.svg)](https://godoc.org/kreklow.us/go/cli)
+[![PkgGoDev](https://pkg.go.dev/badge/kreklow.us/go/cli)](https://pkg.go.dev/kreklow.us/go/cli)
 ![GitHub](https://img.shields.io/github/license/cjkreklow/cli.svg)
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/cjkreklow/cli.svg)
 [![Build Status](https://www.travis-ci.org/cjkreklow/cli.svg?branch=master)](https://www.travis-ci.org/cjkreklow/cli)
