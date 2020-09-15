@@ -4,15 +4,14 @@ language: go
 
 os:
   - linux
+  - osx
 arch:
   - amd64
   - arm64
 go:
+  - 1.15.x
   - 1.14.x
   - 1.13.x
-  - 1.12.x
-  - 1.11.x
-  - master
 
 env:
   global:
@@ -20,22 +19,17 @@ env:
 
 dist: bionic
 go_import_path: kreklow.us/go/cli
-script: go test -v ./...
+script: go test -v -race ./...
 
 jobs:
-  allow_failures:
-    - go: master
-    - arch: arm64
-  fast_finish: true
   include:
-    - name: "Race detector / Codecov"
+    - name: "Test Coverage"
       stage: validate
       script: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
       after_success: bash <(curl -s https://codecov.io/bash)
     - name: "Refresh GoDoc and Go Report Card"
       stage: refresh
-      if: |
-        branch = master AND type = push
+      if: branch = master AND type = push
       language: shell
       install: skip
       script:
