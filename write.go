@@ -38,6 +38,7 @@ func (c *Cmd) SetOutputWriter(w io.Writer) {
 	defer c.outLock.Unlock()
 	c.outWriter = w
 	c.outIsTerm = false
+
 	if f, ok := w.(*os.File); ok {
 		c.outIsTerm = isatty.IsTerminal(f.Fd())
 	}
@@ -49,9 +50,11 @@ func (c *Cmd) SetOutputWriter(w io.Writer) {
 func (c *Cmd) Print(v ...interface{}) (int, error) {
 	c.outLock.Lock()
 	defer c.outLock.Unlock()
+
 	if c.outIsTerm {
 		c.outLiveLines = 0
 	}
+
 	return fmt.Fprint(c.outWriter, v...)
 }
 
@@ -61,13 +64,15 @@ func (c *Cmd) Print(v ...interface{}) (int, error) {
 func (c *Cmd) Printf(f string, v ...interface{}) (int, error) {
 	c.outLock.Lock()
 	defer c.outLock.Unlock()
+
 	if c.outIsTerm {
 		c.outLiveLines = 0
 	}
+
 	return fmt.Fprintf(c.outWriter, f, v...)
 }
 
-// LPrintf implements a "live update" version of cmd.Printf. If the
+// Lprintf implements a "live update" version of cmd.Printf. If the
 // io.Writer specified by SetOutputWriter appears to be a terminal, the
 // previously output line(s) will be cleared before the new line(s) are
 // written. It is safe for concurrent use, although concurrent updates
@@ -75,14 +80,17 @@ func (c *Cmd) Printf(f string, v ...interface{}) (int, error) {
 func (c *Cmd) Lprintf(f string, v ...interface{}) (int, error) {
 	c.outLock.Lock()
 	defer c.outLock.Unlock()
+
 	if !c.outIsTerm {
 		return fmt.Fprintf(c.outWriter, f, v...)
 	}
+
 	c.clearLiveLines()
 	c.outLiveBuf.Reset()
 	fmt.Fprintf(&c.outLiveBuf, f, v...)
 	b := c.outLiveBuf.Bytes()
 	c.outLiveLines = bytes.Count(b, []byte{'\n'})
+
 	return c.outWriter.Write(b)
 }
 
@@ -92,9 +100,11 @@ func (c *Cmd) Lprintf(f string, v ...interface{}) (int, error) {
 func (c *Cmd) Println(v ...interface{}) (int, error) {
 	c.outLock.Lock()
 	defer c.outLock.Unlock()
+
 	if c.outIsTerm {
 		c.outLiveLines = 0
 	}
+
 	return fmt.Fprintln(c.outWriter, v...)
 }
 
@@ -103,45 +113,53 @@ func (c *Cmd) Println(v ...interface{}) (int, error) {
 func (c *Cmd) SetErrorWriter(w io.Writer) {
 	c.errLock.Lock()
 	defer c.errLock.Unlock()
+
 	c.errWriter = w
 	c.errIsTerm = false
+
 	if f, ok := w.(*os.File); ok {
 		c.errIsTerm = isatty.IsTerminal(f.Fd())
 	}
 }
 
-// EPrint is a wrapper around fmt.Print with the destination set to the
+// Eprint is a wrapper around fmt.Print with the destination set to the
 // io.Writer specified by SetErrorWriter. It is safe for concurrent use.
 func (c *Cmd) Eprint(v ...interface{}) (int, error) {
 	c.errLock.Lock()
 	defer c.errLock.Unlock()
+
 	if c.errIsTerm {
 		c.outLiveLines = 0
 	}
+
 	return fmt.Fprint(c.errWriter, v...)
 }
 
-// EPrintf is a wrapper around fmt.Printf with the destination set to
+// Eprintf is a wrapper around fmt.Printf with the destination set to
 // the io.Writer specified by SetErrorWriter. It is safe for concurrent
 // use.
 func (c *Cmd) Eprintf(f string, v ...interface{}) (int, error) {
 	c.errLock.Lock()
 	defer c.errLock.Unlock()
+
 	if c.errIsTerm {
 		c.outLiveLines = 0
 	}
+
 	return fmt.Fprintf(c.errWriter, f, v...)
 }
 
-// EPrintln is a wrapper around fmt.Println with the destination set to
+// Eprintln is a wrapper around fmt.Println with the destination set to
 // the io.Writer specified by SetErrorWriter. It is safe for concurrent
 // use.
 func (c *Cmd) Eprintln(v ...interface{}) (int, error) {
 	c.errLock.Lock()
 	defer c.errLock.Unlock()
+
 	if c.errIsTerm {
 		c.outLiveLines = 0
 	}
+
 	return fmt.Fprintln(c.errWriter, v...)
 }
 
@@ -152,5 +170,6 @@ func (c *Cmd) clearLiveLines() {
 			panic(err)
 		}
 	}
+
 	c.outLiveLines = 0
 }

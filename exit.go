@@ -75,6 +75,7 @@ func (c *Cmd) Done() {
 // avoid exiting prematurely.
 func (c *Cmd) Wait() error {
 	c.exitWg.Wait()
+
 	return c.err
 }
 
