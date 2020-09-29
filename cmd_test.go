@@ -33,7 +33,7 @@ import (
 	"kreklow.us/go/cli"
 )
 
-//nolint:goerr113
+//nolint:goerr113 // keep example simple
 func Example() {
 	cmd := cli.NewCmd()
 	msgs := make(chan []byte, 1)
