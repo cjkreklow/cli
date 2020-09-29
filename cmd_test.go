@@ -1,4 +1,4 @@
-// Copyright 2019 Collin Kreklow
+// Copyright 2020 Collin Kreklow
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -33,7 +33,7 @@ import (
 	"kreklow.us/go/cli"
 )
 
-//nolint:goerr113
+//nolint:goerr113 // keep example simple
 func Example() {
 	cmd := cli.NewCmd()
 	msgs := make(chan []byte, 1)
