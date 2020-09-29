@@ -1,12 +1,12 @@
 name: Release
 on:
-  release:
-    types: [published, created]
+  push:
+    tags:
+      - 'v*'
 
 env:
   GO111MODULE: on
   GOPROXY: https://proxy.golang.org
-  TAG_VER: ${{ github.event.release.tag_name }}
 
 jobs:
   release:
@@ -18,7 +18,7 @@ jobs:
         with:
           go-version: '^1.15.0'
       - name: Go Get
-        run: go get kreklow.us/go/cli@$TAG_VER
+        run: go get kreklow.us/go/cli@${GITHUB_REF#'refs/tags/'}
       - name: Refresh Go Report Card
         run: curl -d "repo=kreklow.us/go/cli" https://goreportcard.com/checks
       - name: Refresh GoDoc
