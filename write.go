@@ -129,7 +129,9 @@ func (c *Cmd) Eprint(v ...interface{}) (int, error) {
 	defer c.errLock.Unlock()
 
 	if c.errIsTerm {
+		c.outLock.Lock()
 		c.outLiveLines = 0
+		c.outLock.Unlock()
 	}
 
 	return fmt.Fprint(c.errWriter, v...)
@@ -143,7 +145,9 @@ func (c *Cmd) Eprintf(f string, v ...interface{}) (int, error) {
 	defer c.errLock.Unlock()
 
 	if c.errIsTerm {
+		c.outLock.Lock()
 		c.outLiveLines = 0
+		c.outLock.Unlock()
 	}
 
 	return fmt.Fprintf(c.errWriter, f, v...)
@@ -157,7 +161,9 @@ func (c *Cmd) Eprintln(v ...interface{}) (int, error) {
 	defer c.errLock.Unlock()
 
 	if c.errIsTerm {
+		c.outLock.Lock()
 		c.outLiveLines = 0
+		c.outLock.Unlock()
 	}
 
 	return fmt.Fprintln(c.errWriter, v...)
