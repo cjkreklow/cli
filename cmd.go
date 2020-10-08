@@ -27,7 +27,6 @@ import (
 	"flag"
 	"io"
 	"os"
-	"sync"
 	"syscall"
 )
 
@@ -39,11 +38,9 @@ type Cmd struct {
 
 	flagSet      *flag.FlagSet
 	outWriter    io.Writer
-	outLock      sync.Mutex
 	errWriter    io.Writer
-	errLock      sync.Mutex
 	outLiveBuf   bytes.Buffer
-	outLiveLines int
+	outLiveLines uint32
 	errIsTerm    bool
 	outIsTerm    bool
 }

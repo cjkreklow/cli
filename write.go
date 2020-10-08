@@ -27,16 +27,31 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
+	"sync/atomic"
 
 	"github.com/mattn/go-isatty"
 )
 
-// SetOutputWriter sets the destination for calls to Print(), Printf()
-// and Println(). NewCmd() sets the default output writer is os.Stdout.
+// lockingWriter is a simple mutex-protected writer.
+type lockingWriter struct {
+	m sync.Mutex
+	w io.Writer
+}
+
+// Write passes the provided data to the embedded io.Writer.
+func (sw *lockingWriter) Write(b []byte) (n int, err error) {
+	sw.m.Lock()
+	n, err = sw.w.Write(b)
+	sw.m.Unlock()
+
+	return
+}
+
+// SetOutputWriter sets the destination for calls to Print, Printf,
+// Println and Lprintf.
 func (c *Cmd) SetOutputWriter(w io.Writer) {
-	c.outLock.Lock()
-	defer c.outLock.Unlock()
-	c.outWriter = w
+	c.outWriter = &lockingWriter{w: w}
 	c.outIsTerm = false
 
 	if f, ok := w.(*os.File); ok {
@@ -48,11 +63,8 @@ func (c *Cmd) SetOutputWriter(w io.Writer) {
 // io.Writer specified by SetOutputWriter. It is safe for concurrent
 // use.
 func (c *Cmd) Print(v ...interface{}) (int, error) {
-	c.outLock.Lock()
-	defer c.outLock.Unlock()
-
 	if c.outIsTerm {
-		c.outLiveLines = 0
+		c.resetLiveLines()
 	}
 
 	return fmt.Fprint(c.outWriter, v...)
@@ -62,11 +74,8 @@ func (c *Cmd) Print(v ...interface{}) (int, error) {
 // io.Writer specified by SetOutputWriter. It is safe for concurrent
 // use.
 func (c *Cmd) Printf(f string, v ...interface{}) (int, error) {
-	c.outLock.Lock()
-	defer c.outLock.Unlock()
-
 	if c.outIsTerm {
-		c.outLiveLines = 0
+		c.resetLiveLines()
 	}
 
 	return fmt.Fprintf(c.outWriter, f, v...)
@@ -78,18 +87,18 @@ func (c *Cmd) Printf(f string, v ...interface{}) (int, error) {
 // written. It is safe for concurrent use, although concurrent updates
 // will overwrite each other.
 func (c *Cmd) Lprintf(f string, v ...interface{}) (int, error) {
-	c.outLock.Lock()
-	defer c.outLock.Unlock()
-
 	if !c.outIsTerm {
 		return fmt.Fprintf(c.outWriter, f, v...)
 	}
 
 	c.clearLiveLines()
 	c.outLiveBuf.Reset()
+
 	fmt.Fprintf(&c.outLiveBuf, f, v...)
+
 	b := c.outLiveBuf.Bytes()
-	c.outLiveLines = bytes.Count(b, []byte{'\n'})
+
+	atomic.StoreUint32(&c.outLiveLines, uint32(bytes.Count(b, []byte{'\n'})))
 
 	return c.outWriter.Write(b)
 }
@@ -98,23 +107,17 @@ func (c *Cmd) Lprintf(f string, v ...interface{}) (int, error) {
 // the io.Writer specified by SetOutputWriter. It is safe for concurrent
 // use.
 func (c *Cmd) Println(v ...interface{}) (int, error) {
-	c.outLock.Lock()
-	defer c.outLock.Unlock()
-
 	if c.outIsTerm {
-		c.outLiveLines = 0
+		c.resetLiveLines()
 	}
 
 	return fmt.Fprintln(c.outWriter, v...)
 }
 
-// SetErrorWriter sets the destination for calls to EPrint(), EPrintf()
-// and EPrintln(). NewCmd() sets the default error writer is os.Stderr.
+// SetErrorWriter sets the destination for calls to EPrint, EPrintf and
+// EPrintln.
 func (c *Cmd) SetErrorWriter(w io.Writer) {
-	c.errLock.Lock()
-	defer c.errLock.Unlock()
-
-	c.errWriter = w
+	c.errWriter = &lockingWriter{w: w}
 	c.errIsTerm = false
 
 	if f, ok := w.(*os.File); ok {
@@ -125,13 +128,8 @@ func (c *Cmd) SetErrorWriter(w io.Writer) {
 // Eprint is a wrapper around fmt.Print with the destination set to the
 // io.Writer specified by SetErrorWriter. It is safe for concurrent use.
 func (c *Cmd) Eprint(v ...interface{}) (int, error) {
-	c.errLock.Lock()
-	defer c.errLock.Unlock()
-
 	if c.errIsTerm {
-		c.outLock.Lock()
-		c.outLiveLines = 0
-		c.outLock.Unlock()
+		c.resetLiveLines()
 	}
 
 	return fmt.Fprint(c.errWriter, v...)
@@ -141,13 +139,8 @@ func (c *Cmd) Eprint(v ...interface{}) (int, error) {
 // the io.Writer specified by SetErrorWriter. It is safe for concurrent
 // use.
 func (c *Cmd) Eprintf(f string, v ...interface{}) (int, error) {
-	c.errLock.Lock()
-	defer c.errLock.Unlock()
-
 	if c.errIsTerm {
-		c.outLock.Lock()
-		c.outLiveLines = 0
-		c.outLock.Unlock()
+		c.resetLiveLines()
 	}
 
 	return fmt.Fprintf(c.errWriter, f, v...)
@@ -157,25 +150,29 @@ func (c *Cmd) Eprintf(f string, v ...interface{}) (int, error) {
 // the io.Writer specified by SetErrorWriter. It is safe for concurrent
 // use.
 func (c *Cmd) Eprintln(v ...interface{}) (int, error) {
-	c.errLock.Lock()
-	defer c.errLock.Unlock()
-
 	if c.errIsTerm {
-		c.outLock.Lock()
-		c.outLiveLines = 0
-		c.outLock.Unlock()
+		c.resetLiveLines()
 	}
 
 	return fmt.Fprintln(c.errWriter, v...)
 }
 
+func (c *Cmd) resetLiveLines() {
+	atomic.StoreUint32(&c.outLiveLines, 0)
+}
+
+//nolint:gochecknoglobals // improves performance of clearLiveLines
+var clearline = []byte("\x1b[1A\x1b[2K")
+
 func (c *Cmd) clearLiveLines() {
-	for l := 0; l < c.outLiveLines; l++ {
-		_, err := c.outWriter.Write([]byte("\x1b[1A\x1b[2K"))
+	ll := atomic.LoadUint32(&c.outLiveLines)
+
+	for l := uint32(0); l < ll; l++ {
+		_, err := c.outWriter.Write(clearline)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	c.outLiveLines = 0
+	c.resetLiveLines()
 }
