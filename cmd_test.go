@@ -25,8 +25,6 @@ package cli_test
 import (
 	"errors"
 	"os"
-	"os/signal"
-	"syscall"
 	"testing"
 	"time"
 
@@ -38,7 +36,7 @@ func Example() {
 	cmd := cli.NewCmd()
 	msgs := make(chan []byte, 1)
 
-	cmd.AddWait()
+	cmd.Add(1)
 
 	// message receiver
 	go func() {
@@ -50,7 +48,7 @@ func Example() {
 	loop:
 		for {
 			select {
-			case <-cmd.ExitChannel():
+			case <-cmd.C:
 				// exit signal, go to cleanup
 				break loop
 			case m := <-msgs:
@@ -100,45 +98,4 @@ func TestFlagSet(t *testing.T) {
 	if *user != "test" {
 		t.Error("expected: test  received: ", user)
 	}
-}
-
-func TestSignalExit(t *testing.T) {
-	t.Run("SIGHUP", testExitSIGHUP)
-	t.Run("SIGINT", testExitSIGINT)
-	t.Run("SIGTERM", testExitSIGTERM)
-}
-
-func testExitSIGHUP(t *testing.T) {
-	testExitSig(t, syscall.SIGHUP)
-}
-
-func testExitSIGINT(t *testing.T) {
-	testExitSig(t, syscall.SIGINT)
-}
-
-func testExitSIGTERM(t *testing.T) {
-	testExitSig(t, syscall.SIGTERM)
-}
-
-func testExitSig(t *testing.T, sig syscall.Signal) {
-	cmd := cli.NewCmd()
-
-	cmd.AddWait()
-
-	go func() {
-		<-cmd.ExitChannel()
-		cmd.Done()
-	}()
-
-	err := syscall.Kill(syscall.Getpid(), sig)
-	if err != nil {
-		t.Error("unexpected error:", err)
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		t.Error("unexpected error:", err)
-	}
-
-	signal.Reset()
 }

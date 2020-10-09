@@ -27,47 +27,33 @@ import (
 	"flag"
 	"io"
 	"os"
-	"os/signal"
-	"sync"
-	"sync/atomic"
 	"syscall"
-	"time"
 )
 
 // Cmd is the primary structure for maintaining application state. It
 // should not be created directly, instead use NewCmd to return a
 // properly initialized Cmd.
 type Cmd struct {
+	*ExitHandler
+
 	flagSet      *flag.FlagSet
 	outWriter    io.Writer
-	outLock      sync.Mutex
 	errWriter    io.Writer
-	errLock      sync.Mutex
 	outLiveBuf   bytes.Buffer
-	outLiveLines int
-	exitTimeout  atomic.Value
-	exitWg       *sync.WaitGroup
-	exitChan     chan bool
-	exitOnce     sync.Once
+	outLiveLines uint32
 	errIsTerm    bool
 	outIsTerm    bool
-	err          error
 }
 
 // NewCmd returns a new initialized Cmd configured with default settings.
 func NewCmd() *Cmd {
 	c := new(Cmd)
-	c.exitWg = new(sync.WaitGroup)
-	c.exitChan = make(chan bool, 1)
+	c.ExitHandler = new(ExitHandler)
 
-	c.SetExitTimeout(5 * time.Second)
 	c.SetOutputWriter(os.Stdout)
 	c.SetErrorWriter(os.Stderr)
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
-
-	go c.watchExitSignal(sigChan)
+	c.Watch(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 
 	c.flagSet = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 
