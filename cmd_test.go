@@ -20,20 +20,27 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+//nolint:goerr113 // keep examples simple
 package cli_test
 
 import (
 	"errors"
 	"os"
-	"testing"
 	"time"
 
 	"kreklow.us/go/cli"
 )
 
-//nolint:goerr113 // keep example simple
 func Example() {
 	cmd := cli.NewCmd()
+	host := cmd.FlagSet.String("host", "localhost", "host name")
+	user := cmd.FlagSet.String("user", "", "user name")
+
+	err := cmd.FlagSet.Parse([]string{"-user", "test"})
+	if err != nil {
+		cmd.Eprintln("unexpected error:", err)
+	}
+
 	msgs := make(chan []byte, 1)
 
 	cmd.Add(1)
@@ -63,6 +70,8 @@ func Example() {
 
 	// message sender
 	go func() {
+		cmd.Printf("connecting: %s@%s\n", *user, *host)
+
 		time.Sleep(time.Second)
 
 		msgs <- []byte("Message")
@@ -70,32 +79,14 @@ func Example() {
 		cmd.Exit(nil)
 	}()
 
-	err := cmd.Wait()
+	err = cmd.Wait()
 	if err != nil {
 		cmd.Eprintln(err)
 		os.Exit(1)
 	}
 
 	// Output:
+	// connecting: test@localhost
 	// Message
 	// Cleaned up
-}
-
-func TestFlagSet(t *testing.T) {
-	cmd := cli.NewCmd()
-	host := cmd.Flags().String("host", "localhost", "host name")
-	user := cmd.Flags().String("user", "", "user name")
-
-	err := cmd.Flags().Parse([]string{"-user", "test"})
-	if err != nil {
-		t.Error("unexpected error: ", err)
-	}
-
-	if *host != "localhost" {
-		t.Error("expected: localhost  received: ", host)
-	}
-
-	if *user != "test" {
-		t.Error("expected: test  received: ", user)
-	}
 }

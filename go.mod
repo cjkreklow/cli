@@ -8,5 +8,5 @@ require (
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/stretchr/testify v1.3.0 // indirect
-	golang.org/x/sys v0.0.0-20200929083018-4d22bbb62b3c // indirect
+	golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634 // indirect
 )
