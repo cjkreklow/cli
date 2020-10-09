@@ -20,8 +20,13 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Package cli provides simple framework for command line applications.
-// The primary goal is to help manage the graceful shutdown of
-// long-running processes with multiple goroutines.
+// Package cli provides simple tools for command line applications.
+//
+// ExitHandler provides an enhanced sync.WaitGroup, along with the
+// ability to coordinate the shutdown of multiple goroutines in
+// long-running processes.
+//
+// TermPrinter provides convenience functions to print output to Stdout
+// and Stderr, including a simple "live writer" for status output.
 //
 package cli

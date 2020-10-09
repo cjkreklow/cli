@@ -20,6 +20,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+//nolint:goerr113 // keep examples simple
 package cli_test
 
 import (
@@ -34,7 +35,6 @@ import (
 	"kreklow.us/go/cli"
 )
 
-//nolint:goerr113 // keep example simple
 func ExampleExitHandler() {
 	eh := new(cli.ExitHandler)
 	msgs := make(chan []byte, 1)

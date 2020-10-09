@@ -23,44 +23,31 @@
 package cli
 
 import (
-	"bytes"
 	"flag"
-	"io"
 	"os"
 	"syscall"
 )
 
-// Cmd is the primary structure for maintaining application state. It
-// should not be created directly, instead use NewCmd to return a
-// properly initialized Cmd.
+// Cmd is a simple structure for building an application. It includes
+// the functionality of ExitHandler and TermPrinter, along with a
+// flag.FlagSet for parsing command line arguments.
+//
 type Cmd struct {
 	*ExitHandler
+	*TermPrinter
 
-	flagSet      *flag.FlagSet
-	outWriter    io.Writer
-	errWriter    io.Writer
-	outLiveBuf   bytes.Buffer
-	outLiveLines uint32
-	errIsTerm    bool
-	outIsTerm    bool
+	FlagSet *flag.FlagSet
 }
 
 // NewCmd returns a new initialized Cmd configured with default settings.
 func NewCmd() *Cmd {
 	c := new(Cmd)
 	c.ExitHandler = new(ExitHandler)
-
-	c.SetOutputWriter(os.Stdout)
-	c.SetErrorWriter(os.Stderr)
+	c.TermPrinter = NewTermPrinter()
 
 	c.Watch(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 
-	c.flagSet = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	c.FlagSet = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 
 	return c
-}
-
-// Flags returns an embedded FlagSet.
-func (c *Cmd) Flags() *flag.FlagSet {
-	return c.flagSet
 }
