@@ -31,7 +31,6 @@ import (
 // Cmd is a simple structure for building an application. It includes
 // the functionality of ExitHandler and TermPrinter, along with a
 // flag.FlagSet for parsing command line arguments.
-//
 type Cmd struct {
 	*ExitHandler
 	*TermPrinter

@@ -28,7 +28,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Netflix/go-expect"
+	expect "github.com/Netflix/go-expect"
 	"kreklow.us/go/cli"
 )
 

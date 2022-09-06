@@ -9,15 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ '~1.15.0', '~1.14.0', '~1.13.0' ]
+        go: [ '~1.19.0', '~1.18.0' ]
     name: Go ${{ matrix.go }}
     steps:
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go }}
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Run Tests
         run: go test -v -race ./...
   codecov:
@@ -26,14 +26,14 @@ jobs:
     name: Codecov
     steps:
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
-          go-version: '~1.15.0'
+          go-version: '~1.19.0'
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Run Tests
         run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         with:
           file: ./coverage.txt

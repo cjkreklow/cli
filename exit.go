@@ -51,7 +51,6 @@ import (
 // caller of Wait once all the goroutines being awaited call Done. If a
 // timeout or signal based forced exit occurs, the error message will be
 // printed to os.Stderr before os.Exit is called.
-//
 type ExitHandler struct {
 	timeout int64 // guarantee 64 bit alignment on 32 bit platforms
 
