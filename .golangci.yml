@@ -92,11 +92,24 @@ linters:
     #- wrapcheck         # Checks that errors returned from external packages are wrapped
 
 issues:
-  include:
-    - EXC0002
-    - EXC0005
+  exclude-use-default: false
 
 linters-settings:
+  errcheck:
+    exclude-functions:
+      - (*kreklow.us/go/cli.TermPrinter).Eprint
+      - (*kreklow.us/go/cli.TermPrinter).Eprintf
+      - (*kreklow.us/go/cli.TermPrinter).Eprintln
+      - (*kreklow.us/go/cli.TermPrinter).Lprint
+      - (*kreklow.us/go/cli.TermPrinter).Lprintf
+      - (*kreklow.us/go/cli.TermPrinter).Lprintln
+      - (*kreklow.us/go/cli.TermPrinter).Print
+      - (*kreklow.us/go/cli.TermPrinter).Printf
+      - (*kreklow.us/go/cli.TermPrinter).Println
+  gosec:
+    excludes:
+      - G104
+      - G307
   nolintlint:
     allow-unused: false
     allow-leading-space: false
