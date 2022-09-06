@@ -13,11 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Release Updates
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '^1.19.0'
-      - name: Update Proxy
-        run: go install kreklow.us/go/cli@${GITHUB_REF#'refs/tags/'}
+      - name: Refresh go.dev
+        run: curl https://proxy.golang.org/kreklow.us/go/cli/@v/${GITHUB_REF#'refs/tags/'}.info
       - name: Refresh Go Report Card
         run: curl -d "repo=kreklow.us/go/cli" https://goreportcard.com/checks
