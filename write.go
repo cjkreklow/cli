@@ -62,7 +62,6 @@ func (lw *lockingWriter) Write(b []byte) (n int, err error) {
 //
 // If TermPrinter is not created with NewTermPrinter, SetStdout and
 // SetStderr must be called before use.
-//
 type TermPrinter struct {
 	livecount uint32
 

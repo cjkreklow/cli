@@ -28,5 +28,4 @@
 //
 // TermPrinter provides convenience functions to print output to Stdout
 // and Stderr, including a simple "live writer" for status output.
-//
 package cli
