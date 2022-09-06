@@ -17,9 +17,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: '^1.19.0'
-      - name: Go Get
-        run: go get kreklow.us/go/cli@${GITHUB_REF#'refs/tags/'}
+      - name: Update Proxy
+        run: go install kreklow.us/go/cli@${GITHUB_REF#'refs/tags/'}
       - name: Refresh Go Report Card
         run: curl -d "repo=kreklow.us/go/cli" https://goreportcard.com/checks
-      - name: Refresh GoDoc
-        run: curl -d "path=kreklow.us/go/cli" https://godoc.org/-/refresh
