@@ -1,8 +1,8 @@
 # Overview
 [![PkgGoDev](https://pkg.go.dev/badge/kreklow.us/go/cli)](https://pkg.go.dev/kreklow.us/go/cli)
-![GitHub](https://img.shields.io/github/license/cjkreklow/cli.svg)
-![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/cjkreklow/cli.svg)
-[![Build Status](https://www.travis-ci.org/cjkreklow/cli.svg?branch=main)](https://www.travis-ci.org/cjkreklow/cli)
+![License](https://img.shields.io/github/license/cjkreklow/cli)
+![Version](https://img.shields.io/github/v/tag/cjkreklow/cli)
+![Status](https://github.com/cjkreklow/cli/actions/workflows/test.yml/badge.svg?branch=main)
 [![codecov](https://codecov.io/gh/cjkreklow/cli/branch/main/graph/badge.svg)](https://codecov.io/gh/cjkreklow/cli)
 [![Go Report Card](https://goreportcard.com/badge/kreklow.us/go/cli)](https://goreportcard.com/report/kreklow.us/go/cli)
 
