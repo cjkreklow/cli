@@ -1,4 +1,4 @@
-// Copyright 2024 Collin Kreklow
+// Copyright 2026 Collin Kreklow
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -52,7 +52,7 @@ import (
 // timeout or signal based forced exit occurs, the error message will be
 // printed to os.Stderr before os.Exit is called.
 type ExitHandler struct {
-	timeout int64 // guarantee 64 bit alignment on 32 bit platforms
+	timeout atomic.Int64
 
 	wg sync.WaitGroup
 
@@ -74,7 +74,7 @@ type ExitHandler struct {
 // SetTimeout sets the timeout duration. A zero or negative value waits
 // indefinitely.
 func (e *ExitHandler) SetTimeout(t time.Duration) {
-	atomic.StoreInt64(&e.timeout, int64(t))
+	e.timeout.Store(int64(t))
 }
 
 // Exit closes the exit channel and starts the timeout timer, if
@@ -87,28 +87,12 @@ func (e *ExitHandler) Exit(err error) {
 
 		close(e.ec)
 
-		t := atomic.LoadInt64(&e.timeout)
+		t := e.timeout.Load()
 
 		if t > 0 {
 			go e.timeoutWait(t)
 		}
 	})
-}
-
-// timeoutWait implements the timeout, called once by Exit.
-func (e *ExitHandler) timeoutWait(t int64) {
-	select {
-	case <-time.After(time.Duration(t)):
-		fmt.Fprintln(os.Stderr, "exit forced by timeout")
-	case <-e.sc:
-		fmt.Fprintln(os.Stderr, "exit forced by signal")
-	}
-
-	if e.err != nil {
-		fmt.Fprintln(os.Stderr, e.err)
-	}
-
-	os.Exit(int(syscall.ETIME))
 }
 
 // Add updates the WaitGroup counter, adding or subtracting as
@@ -173,4 +157,20 @@ func (e *ExitHandler) Watch(signals ...os.Signal) {
 			e.Exit(nil)
 		}()
 	})
+}
+
+// timeoutWait implements the timeout, called once by Exit.
+func (e *ExitHandler) timeoutWait(t int64) {
+	select {
+	case <-time.After(time.Duration(t)):
+		fmt.Fprintln(os.Stderr, "exit forced by timeout")
+	case <-e.sc:
+		fmt.Fprintln(os.Stderr, "exit forced by signal")
+	}
+
+	if e.err != nil {
+		fmt.Fprintln(os.Stderr, e.err)
+	}
+
+	os.Exit(int(syscall.ETIME))
 }

@@ -1,4 +1,4 @@
-// Copyright 2024 Collin Kreklow
+// Copyright 2026 Collin Kreklow
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -85,6 +85,7 @@ func testLprintfConsole(t *testing.T) {
 
 	wg.Wait()
 
+	//nolint:lll // intentional test line
 	if outstr != "print 1\r\nprint 2\r\nprint 3\r\nprint 4\r\n\x1b[1A\x1b[2Kprint 5\r\nprint 6\r\nprint 7\r\nprint 8\r\nprint 9\r\nEND" {
 		t.Error("unexpected output", outstr)
 	}

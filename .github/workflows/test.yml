@@ -13,11 +13,11 @@ jobs:
     name: Go ${{ matrix.go }}
     steps:
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Run Tests
         run: go test -v -race ./...
   codecov:
@@ -26,15 +26,15 @@ jobs:
     name: Codecov
     steps:
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: 'stable'
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Run Tests
         run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           file: ./coverage.txt
