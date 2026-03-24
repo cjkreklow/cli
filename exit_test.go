@@ -1,4 +1,4 @@
-// Copyright 2024 Collin Kreklow
+// Copyright 2026 Collin Kreklow
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -20,7 +20,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//nolint:goerr113 // keep examples simple
+//nolint:err113 // keep examples simple
 package cli_test
 
 import (
@@ -165,7 +165,7 @@ func testExitNone(t *testing.T) {
 
 	go func() {
 		time.Sleep(time.Second)
-		eh.Exit(errors.New("testing error")) //nolint:goerr113 // ignore in test
+		eh.Exit(errors.New("testing error"))
 	}()
 
 	err = eh.Wait()

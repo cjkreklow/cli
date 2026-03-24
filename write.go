@@ -1,4 +1,4 @@
-// Copyright 2024 Collin Kreklow
+// Copyright 2026 Collin Kreklow
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -63,7 +63,7 @@ func (lw *lockingWriter) Write(b []byte) (n int, err error) {
 // If TermPrinter is not created with NewTermPrinter, SetStdout and
 // SetStderr must be called before use.
 type TermPrinter struct {
-	livecount uint32
+	livecount atomic.Int64
 
 	outIsTerm bool
 	errIsTerm bool
@@ -106,7 +106,7 @@ func (tp *TermPrinter) SetStderr(w io.Writer) {
 }
 
 // Print operates in the manner of fmt.Print, writing to Stdout.
-func (tp *TermPrinter) Print(v ...interface{}) (int, error) {
+func (tp *TermPrinter) Print(v ...any) (int, error) {
 	if tp.outIsTerm {
 		tp.resetLiveLines()
 	}
@@ -115,7 +115,7 @@ func (tp *TermPrinter) Print(v ...interface{}) (int, error) {
 }
 
 // Printf operates in the manner of fmt.Printf, writing to Stdout.
-func (tp *TermPrinter) Printf(f string, v ...interface{}) (int, error) {
+func (tp *TermPrinter) Printf(f string, v ...any) (int, error) {
 	if tp.outIsTerm {
 		tp.resetLiveLines()
 	}
@@ -124,7 +124,7 @@ func (tp *TermPrinter) Printf(f string, v ...interface{}) (int, error) {
 }
 
 // Println operates in the manner of fmt.Println, writing to Stdout.
-func (tp *TermPrinter) Println(v ...interface{}) (int, error) {
+func (tp *TermPrinter) Println(v ...any) (int, error) {
 	if tp.outIsTerm {
 		tp.resetLiveLines()
 	}
@@ -139,7 +139,7 @@ func (tp *TermPrinter) Println(v ...interface{}) (int, error) {
 // While Lprintf is safe for concurrent use with Print* and Eprint*,
 // concurrent use of Lprintf will conflict, overwriting the previous
 // output.
-func (tp *TermPrinter) Lprintf(f string, v ...interface{}) (int, error) {
+func (tp *TermPrinter) Lprintf(f string, v ...any) (int, error) {
 	if !tp.outIsTerm {
 		return fmt.Fprintf(tp.out, f, v...)
 	}
@@ -151,13 +151,13 @@ func (tp *TermPrinter) Lprintf(f string, v ...interface{}) (int, error) {
 
 	b := tp.livebuf.Bytes()
 
-	atomic.StoreUint32(&tp.livecount, uint32(bytes.Count(b, []byte{'\n'})))
+	tp.livecount.Store(int64(bytes.Count(b, []byte{'\n'})))
 
 	return tp.out.Write(b)
 }
 
 // Eprint operates in the manner of fmt.Print, writing to Stderr.
-func (tp *TermPrinter) Eprint(v ...interface{}) (int, error) {
+func (tp *TermPrinter) Eprint(v ...any) (int, error) {
 	if tp.errIsTerm {
 		tp.resetLiveLines()
 	}
@@ -166,7 +166,7 @@ func (tp *TermPrinter) Eprint(v ...interface{}) (int, error) {
 }
 
 // Eprintf operates in the manner of fmt.Printf, writing to Stderr.
-func (tp *TermPrinter) Eprintf(f string, v ...interface{}) (int, error) {
+func (tp *TermPrinter) Eprintf(f string, v ...any) (int, error) {
 	if tp.errIsTerm {
 		tp.resetLiveLines()
 	}
@@ -175,7 +175,7 @@ func (tp *TermPrinter) Eprintf(f string, v ...interface{}) (int, error) {
 }
 
 // Eprintln operates in the manner of fmt.Println, writing to Stderr.
-func (tp *TermPrinter) Eprintln(v ...interface{}) (int, error) {
+func (tp *TermPrinter) Eprintln(v ...any) (int, error) {
 	if tp.errIsTerm {
 		tp.resetLiveLines()
 	}
@@ -184,16 +184,14 @@ func (tp *TermPrinter) Eprintln(v ...interface{}) (int, error) {
 }
 
 func (tp *TermPrinter) resetLiveLines() {
-	atomic.StoreUint32(&tp.livecount, 0)
+	tp.livecount.Store(0)
 }
 
 //nolint:gochecknoglobals // improves performance of clearLiveLines
 var clearline = []byte("\x1b[1A\x1b[2K")
 
 func (tp *TermPrinter) clearLiveLines() {
-	ll := atomic.LoadUint32(&tp.livecount)
-
-	for l := uint32(0); l < ll; l++ {
+	for range tp.livecount.Load() {
 		_, err := tp.out.Write(clearline)
 		if err != nil {
 			panic(err)
